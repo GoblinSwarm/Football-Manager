@@ -1,0 +1,10 @@
+team_id, name, finances, trainer_id, stadium_id, league_id
+0, Free Agents, 0, 0, 0, 0
+1, Maracaibo, 150000, 1, 1, 1
+2, San Lorenzo, 150000, 2, 2, 1
+3, Asinomas, 150000, 3, 3, 1
+4, Otto Wulf, 150000, 4, 4, 1
+5, Racing, 150000, 5, 5, 1
+6, Florencia, 150000, 6, 6, 1
+7, Carmelo FC, 150000, 7, 7, 1
+8, Maldonado AC, 150000, 8, 8, 1
