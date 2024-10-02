@@ -4,6 +4,7 @@ This module takes care of starting the API Server, Loading the DB and Adding the
 from flask import Flask, request, jsonify, url_for, Blueprint
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
+import csv
 
 # Importaciones del modelo
 from api.models import db, User, Region, Position, Position_Player, Player, Team, Stadium, Trainer, Trainer_Type, League, Match
@@ -17,11 +18,9 @@ CORS(api)
 
 @api.route('/hello', methods=['POST', 'GET'])
 def handle_hello():
-
     response_body = {
         "message": "Hello! I'm a message that came from the backend, check the network tab on the google inspector and you will see the GET request"
     }
-
     return jsonify(response_body), 200
 
 @api.route('/region', methods=['GET'])
@@ -100,3 +99,26 @@ def get_league(theid):
     league = League.query.get(theid)
     return jsonify([item.serialize() for item in league]), 200
 
+@api.route('/populate_all', methods=['GET'])
+def populate():
+    #trainer_type - trainer - region - position - stadium - league - team - player - position_player -  match - user
+    results=populate_trainer_type()
+
+    return jsonify(results), 200
+
+def populate_trainer_type():
+    #trainer_type_id, name, attribute_increase, increase_amount
+    csv_to_read = "trainer_type"
+    res=read_csv(csv_to_read)
+    print(res)
+
+    return res
+
+def read_csv(to_read):
+    csvread=[]
+    with open(f'/csv/{to_read}.csv', newline='') as csvfile:
+        reader = csv.reader(csvfile)
+        for row in reader:
+            csvread.append(row)
+
+    return csvread
