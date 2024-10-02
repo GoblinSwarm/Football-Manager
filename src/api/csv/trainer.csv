@@ -1,17 +1,17 @@
-trainer_id, name, trainer_type_id
-1, Daniel Perdomo, 1
-2, Mike Ross, 2
-3, Lorenzo Lamas, 3
-4, Manuel Iglesias, 4
-5, Jaime Ross, 5
-6, Luis Madero, 6
-7, Javier Sanchez, 7
-8, Miguel LaTorre, 8
-9, Juan Perez, 1
-10, Xavier Cuadrado, 2
-11, Jorge Estevanez, 3
-12, Julian Roberto, 4
-13, Fernando Assandi, 5
-14, Camilo Gomez, 6
-15, Rigoberto Paez, 7
-16, Esteban Amarillo, 8
+name, trainer_type_id
+Daniel Perdomo, 1
+Mike Ross, 2
+Lorenzo Lamas, 3
+Manuel Iglesias, 4
+Jaime Ross, 5
+Luis Madero, 6
+Javier Sanchez, 7
+Miguel LaTorre, 8
+Juan Perez, 1
+Xavier Cuadrado, 2
+Jorge Estevanez, 3
+Julian Roberto, 4
+Fernando Assandri, 5
+Camilo Gomez, 6
+Rigoberto Paez, 7
+Esteban Amarillo, 8

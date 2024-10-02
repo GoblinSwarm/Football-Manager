@@ -1,9 +1,9 @@
-trainer_type_id, name, attribute_increase, increase_amount 
-1, jogo bonito, passes, 15
-2, defensive, defense, 15
-3, resistence, physique, 15
-4, tactician, stop_ball, 15
-5, shooter, shoot, 15
-6, sharpshooter , precision, 15
-7, rusher, speed, 15
-8, goalkeeping, goalkeep, 20
+name,attribute_increase,increase_amount
+jogo bonito,passes, 15
+defensive,defense,15
+resistence,physique,15
+tactician,stop_ball,15
+shooter,shoot,15
+sharpshooter,precision,15
+rusher,speed,15
+goalkeeping,goalkeep,20
