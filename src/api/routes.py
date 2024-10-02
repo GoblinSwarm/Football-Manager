@@ -7,7 +7,7 @@ from flask_cors import CORS
 import csv
 
 # Importaciones del modelo
-from api.models import db, User, Region, Position, Position_Player, Player, Team, Stadium, Trainer, Trainer_Type, League, Match
+from api.models import db, User, Region, Position, PositionPlayer, Player, Team, Stadium, Trainer, League, Match, TrainerType
 
 
 api = Blueprint('api', __name__)
@@ -102,21 +102,41 @@ def get_league(theid):
 @api.route('/populate_all', methods=['GET'])
 def populate():
     #trainer_type - trainer - region - position - stadium - league - team - player - position_player -  match - user
+    results=[]
     results=populate_trainer_type()
-
+    data = {}
     return jsonify(results), 200
 
 def populate_trainer_type():
-    #trainer_type_id, name, attribute_increase, increase_amount
+    #name, attribute_increase, increase_amount
     csv_to_read = "trainer_type"
-    res=read_csv(csv_to_read)
-    print(res)
+    file_read=read_csv(csv_to_read)
+    jump = True
+    
+    for row in file_read[1:]:
 
-    return res
+            trainertype = TrainerType(
+                name=row[0].strip(),  
+                attribute_increase=row[1].strip(),  
+                increase_amount= int(row[2].strip())
+            )
+                
+            print(f"Adding TrainerType: {trainertype}") 
+            db.session.add(trainertype)
+    try:
+        db.session.commit()
+        return "trainertype added"
+    except Exception as e:
+        print(e.args)
+        db.session.rollback()
+        return jsonify({"message": "Couldnt create trainertypes"}), 400
+    
 
 def read_csv(to_read):
     csvread=[]
-    with open(f'/csv/{to_read}.csv', newline='') as csvfile:
+    address="./src/api/csv/" + to_read + ".csv" 
+
+    with open(address, newline='') as csvfile:
         reader = csv.reader(csvfile)
         for row in reader:
             csvread.append(row)

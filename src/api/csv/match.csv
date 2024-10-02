@@ -1,1 +1,1 @@
- match_id, match_date, league_id, home_team, away_team, home_goals, away_goals, result, played
+match_date, league_id, home_team, away_team, home_goals, away_goals, result, played

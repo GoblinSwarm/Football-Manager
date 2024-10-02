@@ -1,10 +1,10 @@
-stadium_id, name, standard_seats, bleacher_seats, premium_seats, club_seats, box_seats
-0, Free Agents Stadium, 0, 0, 0, 0, 0
-1, Maracaibo, 5000, 3500, 2000, 500, 50
-2, San Lorenzo, 5000, 3500, 2000, 500, 50
-3, Asinomas, 5000, 3500, 2000, 500, 50
-4, Otto Wulf, 5000, 3500, 2000, 500, 50
-5, Racing, 5000, 3500, 2000, 500, 50
-6, Florencia, 5000, 3500, 2000, 500, 50
-7, Carmelo FC, 5000, 3500, 2000, 500, 50
-8, Maldonado AC, 5000, 3500, 2000, 500, 50
+name, standard_seats, bleacher_seats, premium_seats, club_seats, box_seats
+Free Agents Stadium, 0, 0, 0, 0, 0
+Maracaibo, 5000, 3500, 2000, 500, 50
+San Lorenzo, 5000, 3500, 2000, 500, 50
+Asinomas, 5000, 3500, 2000, 500, 50
+Otto Wulf, 5000, 3500, 2000, 500, 50
+Racing, 5000, 3500, 2000, 500, 50
+Florencia, 5000, 3500, 2000, 500, 50
+Carmelo FC, 5000, 3500, 2000, 500, 50
+Maldonado AC, 5000, 3500, 2000, 500, 50
