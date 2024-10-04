@@ -76,7 +76,7 @@ def get_trainer(theid):
 
 @api.route('/trainer_type', methods=['GET'])
 def get_trainter_type():
-    trainer_type = Trainer_Type.query.all()
+    trainer_type = TrainerType.query.all()
     return jsonify([item.serialize() for item in trainer_type])
 
 @api.route('/matches', methods=['GET'])
@@ -99,13 +99,30 @@ def get_league(theid):
     league = League.query.get(theid)
     return jsonify([item.serialize() for item in league]), 200
 
+def read_csv(to_read):
+    csvread=[]
+    address="./src/api/csv/" + to_read + ".csv" 
+
+    with open(address, newline='') as csvfile:
+        reader = csv.reader(csvfile)
+        for row in reader:
+            csvread.append(row)
+
+    return csvread
+
 @api.route('/populate_all', methods=['GET'])
 def populate():
     #trainer_type - trainer - region - position - stadium - league - team - player - position_player -  match - user
     results=[]
     results.append(populate_trainer_type())
     results.append(populate_trainer())
-    data = {}
+    results.append(populate_stadium())
+    results.append(populate_region())
+    results.append(populate_position())
+    results.append(populate_league())
+    results.append(populate_team())
+
+
     return jsonify(results), 200
 
 def populate_trainer_type():
@@ -130,7 +147,6 @@ def populate_trainer_type():
         db.session.rollback()
         return jsonify({"message": "Couldnt create trainertypes"}), 400
     
-
 def populate_trainer():
     csv_to_read = "trainer"
     file_read=read_csv(csv_to_read)
@@ -150,13 +166,105 @@ def populate_trainer():
         db.session.rollback()
         return jsonify({"message": "Couldnt create Trainers"}), 400
 
-def read_csv(to_read):
-    csvread=[]
-    address="./src/api/csv/" + to_read + ".csv" 
+def populate_stadium():
+    csv_to_read = 'stadium'
+    file_read=read_csv(csv_to_read)
+    #name, standard_seats, bleacher_seats, premium_seats, club_seats, box_seats
+    for row in file_read[1:]:
+            stadium = Stadium(
+                name=row[0].strip(),  
+                standard_seats=row[1].strip(),  
+                bleacher_seats=row[2].strip(),
+                premium_seats=row[3].strip(),
+                club_seats=row[4].strip(),
+                box_seats=row[5].strip()
+            )
+            print(f"Adding Trainers: {stadium}") 
+            db.session.add(stadium)
+    try:
+        db.session.commit()
+        return "Stadium added"
+    except Exception as e:
+        print(e.args)
+        db.session.rollback()
+        return jsonify({"message": "Couldnt create Stadium"}), 400     
 
-    with open(address, newline='') as csvfile:
-        reader = csv.reader(csvfile)
-        for row in reader:
-            csvread.append(row)
+def populate_region():
+    csv_to_read = 'region'
+    file_read=read_csv(csv_to_read)
+    #name, standard_seats, bleacher_seats, premium_seats, club_seats, box_seats
+    for row in file_read[1:]:
+            region = Region(
+                name=row[0].strip(),  
+            )
+            print(f"Adding Region: {region}") 
+            db.session.add(region)
+    try:
+        db.session.commit()
+        return "Region added"
+    except Exception as e:
+        print(e.args)
+        db.session.rollback()
+        return jsonify({"message": "Couldnt create Region"}), 400     
 
-    return csvread
+def populate_position():
+    csv_to_read = 'position'
+    file_read=read_csv(csv_to_read)
+    
+    for row in file_read[1:]:
+            position = Position(
+                name=row[0].strip(),  
+            )
+            print(f"Adding Region: {position}") 
+            db.session.add(position)
+    try:
+        db.session.commit()
+        return "Position added"
+    except Exception as e:
+        print(e.args)
+        db.session.rollback()
+        return jsonify({"message": "Couldnt create Position"}), 400     
+
+def populate_league():
+    csv_to_read = 'league'
+    file_read=read_csv(csv_to_read)
+    #name, league_depth, league_number
+    for row in file_read[1:]:
+            league = League(
+                name=row[0].strip(),  
+                league_depth=row[1].strip(),
+                league_number=row[2].strip()
+            )
+            print(f"Adding Region: {league}") 
+            db.session.add(league)
+    try:
+        db.session.commit()
+        return "League added"
+    except Exception as e:
+        print(e.args)
+        db.session.rollback()
+        return jsonify({"message": "Couldnt create League"}), 400   
+
+def populate_team():
+    csv_to_read = 'team'
+    file_read=read_csv(csv_to_read)
+    #name, finances, trainer_id, stadium_id, league_id
+    for row in file_read[1:]:
+            team = Team(
+                name=row[0].strip(),  
+                finances=row[1].strip(),
+                trainer_id=row[2].strip(),
+                stadium_id=row[3].strip(),
+                league_id=row[4].strip()
+            )
+            print(f"Adding Region: {team}") 
+            db.session.add(team)
+    try:
+        db.session.commit()
+        return "Team added"
+    except Exception as e:
+        print(e.args)
+        db.session.rollback()
+        return jsonify({"message": "Couldnt create Team"}), 400   
+
+
