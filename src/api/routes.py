@@ -103,7 +103,8 @@ def get_league(theid):
 def populate():
     #trainer_type - trainer - region - position - stadium - league - team - player - position_player -  match - user
     results=[]
-    results=populate_trainer_type()
+    results.append(populate_trainer_type())
+    results.append(populate_trainer())
     data = {}
     return jsonify(results), 200
 
@@ -120,17 +121,34 @@ def populate_trainer_type():
                 attribute_increase=row[1].strip(),  
                 increase_amount= int(row[2].strip())
             )
-                
-            print(f"Adding TrainerType: {trainertype}") 
             db.session.add(trainertype)
     try:
         db.session.commit()
-        return "trainertype added"
+        return "TrainerType added"
     except Exception as e:
         print(e.args)
         db.session.rollback()
         return jsonify({"message": "Couldnt create trainertypes"}), 400
     
+
+def populate_trainer():
+    csv_to_read = "trainer"
+    file_read=read_csv(csv_to_read)
+    #name, trainertype_id
+    for row in file_read[1:]:
+            trainer = Trainer(
+                name=row[0].strip(),  
+                trainertype_id=row[1].strip(),  
+            )
+            print(f"Adding Trainers: {trainer}") 
+            db.session.add(trainer)
+    try:
+        db.session.commit()
+        return "Trainers added"
+    except Exception as e:
+        print(e.args)
+        db.session.rollback()
+        return jsonify({"message": "Couldnt create Trainers"}), 400
 
 def read_csv(to_read):
     csvread=[]
