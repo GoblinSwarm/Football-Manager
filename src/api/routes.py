@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify, url_for, Blueprint
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 import csv
-
+import random
 # Importaciones del modelo
 from api.models import db, User, Region, Position, PositionPlayer, Player, Team, Stadium, Trainer, League, Match, TrainerType
 
@@ -121,7 +121,10 @@ def populate():
     results.append(populate_position())
     results.append(populate_league())
     results.append(populate_team())
-
+    results.append(populate_player())
+    
+    #results.append(populate_user())
+    #results.append(populate_match())
 
     return jsonify(results), 200
 
@@ -246,6 +249,7 @@ def populate_league():
         return jsonify({"message": "Couldnt create League"}), 400   
 
 def populate_team():
+    # En este metodo debe de venir el region_id para llamar
     csv_to_read = 'team'
     file_read=read_csv(csv_to_read)
     #name, finances, trainer_id, stadium_id, league_id
@@ -267,4 +271,69 @@ def populate_team():
         db.session.rollback()
         return jsonify({"message": "Couldnt create Team"}), 400   
 
+def populate_player():
+    #Este metodo es llamado por populate_team y debe traer team_id y region_id
+    #name, age, mentality, speed, passes, shoot, stop_ball, defense, physique, precision, goalkeep, salary, team_id, region_id
+    # 9 attributes
+    teams = Team.query.all()
+    regions = Region.query.all()
+    player_to_create = 16
+        
+    for region in regions:
+         for team in teams:
+            for meta_player in range(player_to_create):
+                list_attributes=[]
+                for i in range(9):
+                        list_attributes.append(random_generator(1, 6))
 
+                player = Player(
+                name = random_name(),
+                age = random_generator(18, 30),
+                mentality = list_attributes[0],
+                speed = list_attributes[1],
+                passes = list_attributes[2],
+                shoot = list_attributes[3],
+                stop_ball = list_attributes[4],
+                defense = list_attributes[5],
+                physique = list_attributes[6],
+                precision = list_attributes[7],
+                goalkeep = list_attributes[8],
+                salary = calculate_salary_based_attributes(list_attributes),
+                team_id = team.team_id,
+                region_id = region.region_id
+                )
+                db.session.add(player)  
+    try:
+        db.session.commit()
+        return "Player added"
+    except Exception as e:
+        print(e.args)
+        db.session.rollback()
+    return jsonify({"message": "Couldnt create Player"}), 400  
+    
+def random_name():
+    firstname=read_csv("name")
+    lastname=read_csv("lastname")
+    
+    first_part_name=random_generator(0, len(firstname) - 1)
+    last_part_name=random_generator(0, len(lastname) - 1)
+    
+    first=firstname[first_part_name]
+    first = ''.join(first)
+    last=lastname[last_part_name]
+    last = ''.join(last)
+    fullname = first + ' ' + last
+
+    return fullname
+
+def calculate_salary_based_attributes(attributes):
+    # attributes * 500, magic number
+    base_salary= 0
+    for value in attributes:
+         base_salary += value * 500
+    print(f"Base Salary: " + str(base_salary))
+    return base_salary
+
+def random_generator(min, max):
+    number = random.randint(min, max) 
+    return number
