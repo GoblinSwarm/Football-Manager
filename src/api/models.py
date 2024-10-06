@@ -171,6 +171,7 @@ class Team(db.Model):
     team_id= db.Column(db.Integer, primary_key=True)
     name= db.Column(db.String, unique=False, nullable=False)
     finances= db.Column(db.Integer, nullable=False)
+    is_bot= db.Column(db.Boolean, nullable=False)
 
     trainer_id = db.Column(db.Integer, db.ForeignKey('trainer.trainer_id'), nullable=False)
     stadium_id = db.Column(db.Integer, db.ForeignKey('stadium.stadium_id'), nullable=False)
