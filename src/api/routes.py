@@ -4,8 +4,13 @@ This module takes care of starting the API Server, Loading the DB and Adding the
 from flask import Flask, request, jsonify, url_for, Blueprint
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
-import csv
-import random
+import csv, random, os
+from datetime import datetime, timedelta
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from werkzeug.security import check_password_hash
+from base64 import b64encode
+from api.utils import set_password
+from sqlalchemy import desc
 # Importaciones del modelo
 from api.models import db, User, Region, Position, PositionPlayer, Player, Team, Stadium, Trainer, League, Match, TrainerType
 
@@ -14,6 +19,12 @@ api = Blueprint('api', __name__)
 
 # Allow CORS requests to this API
 CORS(api)
+
+expires_in_minutes = 10
+expires_delta = timedelta(minutes=expires_in_minutes)
+
+def check_password(hash_password, password, salt):
+    return check_password_hash(hash_password, f"{password}{salt}")
 
 
 @api.route('/hello', methods=['POST', 'GET'])
@@ -122,10 +133,9 @@ def populate():
     results.append(populate_league())
     results.append(populate_team())
     results.append(populate_player())
-    
+    results.append(populate_match())
     #results.append(populate_user())
-    #results.append(populate_match())
-
+    
     return jsonify(results), 200
 
 def populate_trainer_type():
@@ -259,7 +269,8 @@ def populate_team():
                 finances=row[1].strip(),
                 trainer_id=row[2].strip(),
                 stadium_id=row[3].strip(),
-                league_id=row[4].strip()
+                league_id=row[4].strip(),
+                is_bot = True
             )
             print(f"Adding Region: {team}") 
             db.session.add(team)
@@ -331,9 +342,163 @@ def calculate_salary_based_attributes(attributes):
     base_salary= 0
     for value in attributes:
          base_salary += value * 500
-    print(f"Base Salary: " + str(base_salary))
     return base_salary
 
 def random_generator(min, max):
     number = random.randint(min, max) 
     return number
+
+def populate_match():   
+    
+    leagues = League.query.all()
+    for league in leagues:
+        calendario_ida, calendario_vuelta = calendar_creation(league.league_id)
+        create_matches(calendario_ida, calendario_vuelta, league.league_id)
+    
+    return "Matches Added"
+
+def create_matches(calendario_ida, calendario_vuelta, league_id):
+    match_date = 1 
+    matches = []
+    #match_date, league_id, home_team_id, away_team_id, home_goals, away_goals, result, played
+    for jornada in calendario_ida:
+        for home_team, away_team in jornada:
+            match = Match(
+                match_date = match_date,
+                league_id = league_id,
+                home_team_id=home_team.team_id,
+                away_team_id=away_team.team_id,
+                home_goals=0,
+                away_goals=0,
+                result="-",
+                played=False
+            )
+            db.session.add(match)
+        match_date += 1
+
+    for jornada in calendario_vuelta:
+        for home_team, away_team in jornada:
+            match = Match(
+                match_date = match_date,
+                league_id = league_id,
+                home_team_id=home_team.team_id,
+                away_team_id=away_team.team_id,
+                home_goals=0,
+                away_goals=0,
+                result="-",
+                played=False
+            )
+            db.session.add(match)
+        match_date += 1
+    try:
+        db.session.commit()
+        return 
+    except Exception as e:
+        print(e.args)
+        db.session.rollback()
+        return jsonify("Matches not working"), 400
+
+def calendar_creation(league_id):
+    teams = Team.query.filter_by(league_id=league_id).all()
+    
+    n = len(teams)
+    calendario_ida = []
+    calendario_vuelta = []
+
+    for i in range(n - 1):
+        jornada = []
+        for j in range(n // 2):
+            home_team = teams[j]
+            away_team = teams[n - 1 - j]
+            jornada.append((home_team, away_team))
+        
+        calendario_ida.append(jornada)
+        calendario_vuelta.append([(away_team, home_team) for home_team, away_team in jornada])
+        teams = [teams[0]] + [teams[-1]] + teams[1:-1]
+
+    return calendario_ida, calendario_vuelta
+
+@api.route('/user/register', methods=['POST'])
+def register_user():
+    data_json = request.json
+    #name, birthday, email, password, salt, region
+    data = {
+        "name": data_json.get("name"),
+        "birthday": data_json.get("birthday"),
+        "email": data_json.get("email"),
+        "password": data_json.get("password"),
+        "region_id": data_json.get("region_id")
+    }
+    
+    name=data.get("name")
+    birthday=data.get("birthday")
+    email=data.get("email")
+    password=data.get("password")
+    region_id=data.get("region_id")
+
+    #Aca se genera un equipo nuevo 
+    team_id=new_team_generator(region_id)
+    
+
+
+    if email is None or password is None:
+        return jsonify("Email and Password are needed"), 400
+    else: 
+        user = User.query.filter_by(email=email).one_or_none()
+        if user is not None:
+            return jsonify("User exists, please login"), 400
+        
+        salt = b64encode(os.urandom(32)).decode("utf-8")
+        password = set_password(password, salt)
+        user = User(name=name, birthday=birthday, email=email,password=password, salt=salt, region_id=region, team_id=team_id)
+
+        db.session.add(user)
+
+        try:
+            db.session.commit()
+            return jsonify({"message": "User created!"}), 201
+        except Exception as e:
+            print(e.args)
+            db.session.rollback
+            return jsonify({"Error Message": f"User was not created: {e.args}"}), 400
+        
+def new_team_generator(region_id):
+    team_found = False
+    while team_found == False:
+        region_leagues = League.query.get(region_id=region_id)
+        for league in region_leagues:
+            if league is not None:
+                team = Team.query.filter_by(is_bot=True).first()
+                return team
+            else:
+                generate_bot_leagues(region_id)
+                #generate new teams for leagues
+                #generate new players for new teams
+                
+
+    pass
+
+def generate_bot_leagues(region_id):
+    #Ultima liga en esa region
+    last_league = League.query.filter_by(region_id=region_id).order_by(desc(League.id)).first()
+    
+    #name, league_depth, league_number
+    league_depth = last_league.league_depth + 1 # Profundidad de liga nueva
+    league_iterations = (last_league.league_number * 4) # Da la cantidad de nuevas ligas a crearse
+
+    for i in range(1, league_iterations):
+        new_league = League(
+            name =  random_name(),
+            league_depth = league_depth,
+            league_number = i
+        )
+        db.session.add(new_league)
+
+    try:
+        db.session.commit()
+        return jsonify("New leagues created!"), 200
+    except Exception as e:
+        print(e.args)
+        db.session.rollback()
+        return jsonify("Problem with leagues correct it at once!"), 400
+
