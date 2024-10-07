@@ -142,10 +142,8 @@ def populate_trainer_type():
     #name, attribute_increase, increase_amount
     csv_to_read = "trainer_type"
     file_read=read_csv(csv_to_read)
-    jump = True
     
     for row in file_read[1:]:
-
             trainertype = TrainerType(
                 name=row[0].strip(),  
                 attribute_increase=row[1].strip(),  
@@ -437,9 +435,7 @@ def register_user():
     region_id=data.get("region_id")
 
     #Aca se genera un equipo nuevo 
-    team_id=new_team_generator(region_id)
-    
-
+    team=new_team_generator(region_id)
 
     if email is None or password is None:
         return jsonify("Email and Password are needed"), 400
@@ -450,7 +446,7 @@ def register_user():
         
         salt = b64encode(os.urandom(32)).decode("utf-8")
         password = set_password(password, salt)
-        user = User(name=name, birthday=birthday, email=email,password=password, salt=salt, region_id=region, team_id=team_id)
+        user = User(name=name, birthday=birthday, email=email,password=password, salt=salt, region_id=region_id, team_id=team.team_id)
 
         db.session.add(user)
 
@@ -472,11 +468,8 @@ def new_team_generator(region_id):
                 return team
             else:
                 generate_bot_leagues(region_id)
-                #generate new teams for leagues
-                #generate new players for new teams
-                
-
-    pass
+                generate_bot_teams(region_id)               
+                region_leagues = League.query.get(region_id=region_id)
 
 def generate_bot_leagues(region_id):
     #Ultima liga en esa region
@@ -502,3 +495,108 @@ def generate_bot_leagues(region_id):
         db.session.rollback()
         return jsonify("Problem with leagues correct it at once!"), 400
 
+def generate_bot_teams(region_id):
+    #name, finances, trainer_id, stadium_id, league_id
+    last_league = League.query.filter_by(region_id=region_id).order_by(desc(League.league_id)).first()
+    leagues = League.query.filter_by(region_id=region_id, league_depth=last_league.league_depth)
+
+    for league in leagues:
+        for i in range(1,8):
+            team_name = "JJX " + str(i)
+            team = Team(
+                name = team_name,
+                finances = 150000,
+                trainer_id = generate_random_trainer(),
+                stadium_id = generate_stadium(team_name),
+                league_id = league.league_id
+            )
+            for i in range(1,16):
+                generate_players(team.team_id, region_id)
+            db.session.add(team)
+    try:
+        db.session.commit()
+        return jsonify("Team created"), 200
+    except Exception as e:
+        print(e.args)
+        db.session.rollback()
+        return jsonify("Team is falling apart, morale really low"), 400
+
+def generate_stadium(team_name):
+    #name, standard_seats, bleacher_seats, premium_seats, club_seats, box_seats
+    stadium = Stadium(
+        name = team_name + " Stadium",
+        standard_seats = 5000,
+        bleacher_seats = 3500,
+        premium_seats = 2000,
+        club_seats = 500, 
+        box_seats = 50
+    )
+    db.session.add(stadium)
+
+    try:
+        db.session.commit()
+        return stadium.stadium_id
+    except Exception as e:
+        print(e.args)    
+        db.session.rollback()
+        return jsonify("Transaction couldnt be completed"), 400
+
+def generate_random_trainer():
+    #name, trainertype_id
+    trainer = Trainer (
+        name = random_name(),
+        trainertype_id = generate_random_trainer_type()
+    )
+    db.session.add(trainer)
+    try:
+        db.session.commit()
+        return trainer.trainer_id
+    except Exception as e:
+        print(e.args)
+        db.session.rollback()
+        return jsonify("This isnt working out!"), 400
+
+def generate_random_trainer_type():
+    trainertypes = TrainerType.query.all()
+    trainertype=random.choice(trainertypes)
+    return trainertype.trainertype_id
+
+def generate_players(team_id, region_id):
+    #name, age, mentality, speed, passes, shoot, stop_ball, defense, physique, precision, goalkeep, salary, team_id, region_id
+    #age between 17 y 26, not too old, not too young
+    mentality = random_generator(1,6),
+    speed = random_generator(1,6),
+    passes = random_generator(1,6),
+    shoot = random_generator(1,6),
+    stop_ball = random_generator(1,6),
+    defense = random_generator(1,6),
+    physique = random_generator(1,6),
+    precision = random_generator(1,6),
+    goalkeep = random_generator(1,6),
+    attributes_list = [mentality, speed, passes, shoot, stop_ball, defense, physique, precision, goalkeep]
+
+    player = Player(
+        name = random_name(),
+        age = random_generator(17,26),
+        mentality = mentality,
+        speed = speed,
+        passes = passes,
+        shoot = shoot,
+        stop_ball = stop_ball,
+        defense = defense,
+        physique = physique,
+        precision = precision,
+        goalkeep = goalkeep,
+        salary  = calculate_salary_based_attributes(attributes_list),
+        team_id = team_id,
+        region_id = region_id
+    )
+    db.session(player)
+
+    try:
+        db.session.commit()
+        return jsonify("Players created"), 200
+    except Exception as e:
+        print(e.args)
+        db.session.rollback()
+        return jsonify("Player error, check terminal"), 400
