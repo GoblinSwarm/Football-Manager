@@ -16,7 +16,7 @@ from api.models import db, User, Region, Position, PositionPlayer, Player, Team,
 
 
 api = Blueprint('api', __name__)
-
+get_jwt_identity
 # Allow CORS requests to this API
 CORS(api)
 
@@ -432,10 +432,8 @@ def register_user():
     birthday=data.get("birthday")
     email=data.get("email")
     password=data.get("password")
-    region_id=data.get("region_id")
-
-    #Aca se genera un equipo nuevo 
-    team=new_team_generator(region_id)
+    user_region_id=data.get("region_id")
+    
 
     if email is None or password is None:
         return jsonify("Email and Password are needed"), 400
@@ -446,8 +444,9 @@ def register_user():
         
         salt = b64encode(os.urandom(32)).decode("utf-8")
         password = set_password(password, salt)
-        user = User(name=name, birthday=birthday, email=email,password=password, salt=salt, region_id=region_id, team_id=team.team_id)
-
+        #Aca se genera un equipo nuevo 
+        team=new_team_generator(user_region_id)
+        user = User(name=name, birthday=birthday, email=email,password=password, salt=salt, region_id=user_region_id, team_id=team.team_id)
         db.session.add(user)
 
         try:
@@ -458,18 +457,19 @@ def register_user():
             db.session.rollback
             return jsonify({"Error Message": f"User was not created: {e.args}"}), 400
         
-def new_team_generator(region_id):
+def new_team_generator(user_region_id):
     team_found = False
     while team_found == False:
-        region_leagues = League.query.get(region_id=region_id)
+        region_leagues = League.query.filter_by(region_id=user_region_id)
+        print(region_leagues)
         for league in region_leagues:
             if league is not None:
                 team = Team.query.filter_by(is_bot=True).first()
                 return team
             else:
-                generate_bot_leagues(region_id)
-                generate_bot_teams(region_id)               
-                region_leagues = League.query.get(region_id=region_id)
+                generate_bot_leagues(user_region_id)
+                generate_bot_teams(user_region_id)               
+                region_leagues = League.query.get(region_id=user_region_id)
 
 def generate_bot_leagues(region_id):
     #Ultima liga en esa region
@@ -600,3 +600,22 @@ def generate_players(team_id, region_id):
         print(e.args)
         db.session.rollback()
         return jsonify("Player error, check terminal"), 400
+
+@api.route('/login', methods=['POST'])
+def user_login():
+    data = request.json
+    if data.get("email", None) is None:
+        return jsonify({"message": "Email is required"}), 400
+    
+    user = User.query.filter_by(email=data["email"]).one_or_none()
+    if user is not None:
+        result = check_password_hash(user.password, f'{data["password"]}{user.salt}')
+        if result:
+            token = create_access_token(identity=user.email)
+            return jsonify({"token":token}), 200
+        else: 
+            return jsonify({"message": "bad credentials"}), 400
+    else: 
+        return jsonify({"message": "bad credentials"}), 400
+
+    
