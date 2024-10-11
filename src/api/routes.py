@@ -51,7 +51,7 @@ def get_player():
 
 @api.route('/player/<int:theid>', methods=['GET'])
 def get_player_position(theid):
-    position_player = Position_Player.query.filter_by(player_id=theid).all()
+    position_player = PositionPlayer.query.filter_by(player_id=theid).all()
 
     if position_player is not None:
         return jsonify([item.serialize() for item in position_player]), 200
@@ -134,7 +134,6 @@ def populate():
     results.append(populate_team())
     results.append(populate_player())
     results.append(populate_match())
-    #results.append(populate_user())
     
     return jsonify(results), 200
 
@@ -241,7 +240,7 @@ def populate_league():
     file_read=read_csv(csv_to_read)
     #name, league_depth, league_number
     for row in file_read[1:]:
-            for i in range(1,4):
+            for i in range(1,5):
                 league = League(
                     name=row[0].strip(),  
                     league_depth=row[1].strip(),
@@ -264,7 +263,7 @@ def populate_team():
     file_read=read_csv(csv_to_read)
     #name, finances, trainer_id, stadium_id, league_id
     for row in file_read[1:]:
-            for i in range(1,4):
+            for i in range(1,5):
                 team = Team(
                     name=row[0].strip(),  
                     finances=row[1].strip(),
@@ -274,8 +273,8 @@ def populate_team():
                     is_bot = True,
                     region_id=i
                 )
-            print(f"Adding Region: {team}") 
-            db.session.add(team)
+                print(f"Adding Region: {team}") 
+                db.session.add(team)
     try:
         db.session.commit()
         return "Team added"
@@ -288,17 +287,16 @@ def populate_player():
     #name, age, mentality, speed, passes, shoot, stop_ball, defense, physique, precision, goalkeep, salary, team_id, region_id
     # 9 attributes
     teams = Team.query.all()
-    regions = Region.query.all()
     player_to_create = 16
         
-    for region in regions:
-         for team in teams:
-            for meta_player in range(player_to_create):
-                list_attributes=[]
-                for i in range(9):
-                        list_attributes.append(random_generator(1, 6))
+    
+    for team in teams:
+        for meta_player in range(player_to_create):
+            list_attributes=[]
+            for i in range(9):
+                list_attributes.append(random_generator(1, 6))
 
-                player = Player(
+            player = Player(
                 name = random_name(),
                 age = random_generator(18, 30),
                 mentality = list_attributes[0],
@@ -321,9 +319,9 @@ def populate_player():
                 exp_goalkeep = 0,
                 salary = calculate_salary_based_attributes(list_attributes),
                 team_id = team.team_id,
-                region_id = region.region_id
-                )
-                db.session.add(player)  
+                region_id = team.region_id
+            )
+            db.session.add(player)  
     try:
         db.session.commit()
         return "Player added"
