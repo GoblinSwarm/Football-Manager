@@ -241,13 +241,15 @@ def populate_league():
     file_read=read_csv(csv_to_read)
     #name, league_depth, league_number
     for row in file_read[1:]:
-            league = League(
-                name=row[0].strip(),  
-                league_depth=row[1].strip(),
-                league_number=row[2].strip()
-            )
-            print(f"Adding Region: {league}") 
-            db.session.add(league)
+            for i in range(1,4):
+                league = League(
+                    name=row[0].strip(),  
+                    league_depth=row[1].strip(),
+                    league_number=row[2].strip(),
+                    region_id=i
+                )
+                print(f"Adding Region: {league}") 
+                db.session.add(league)
     try:
         db.session.commit()
         return "League added"
@@ -262,14 +264,16 @@ def populate_team():
     file_read=read_csv(csv_to_read)
     #name, finances, trainer_id, stadium_id, league_id
     for row in file_read[1:]:
-            team = Team(
-                name=row[0].strip(),  
-                finances=row[1].strip(),
-                trainer_id=row[2].strip(),
-                stadium_id=row[3].strip(),
-                league_id=row[4].strip(),
-                is_bot = True
-            )
+            for i in range(1,4):
+                team = Team(
+                    name=row[0].strip(),  
+                    finances=row[1].strip(),
+                    trainer_id=row[2].strip(),
+                    stadium_id=row[3].strip(),
+                    league_id=row[4].strip(),
+                    is_bot = True,
+                    region_id=i
+                )
             print(f"Adding Region: {team}") 
             db.session.add(team)
     try:
@@ -281,7 +285,6 @@ def populate_team():
         return jsonify({"message": "Couldnt create Team"}), 400   
 
 def populate_player():
-    #Este metodo es llamado por populate_team y debe traer team_id y region_id
     #name, age, mentality, speed, passes, shoot, stop_ball, defense, physique, precision, goalkeep, salary, team_id, region_id
     # 9 attributes
     teams = Team.query.all()
@@ -299,14 +302,23 @@ def populate_player():
                 name = random_name(),
                 age = random_generator(18, 30),
                 mentality = list_attributes[0],
+                exp_mentality = 0,
                 speed = list_attributes[1],
+                exp_speed = 0,
                 passes = list_attributes[2],
+                exp_passes = 0,
                 shoot = list_attributes[3],
+                exp_shoot = 0,
                 stop_ball = list_attributes[4],
+                exp_stop_ball = 0,
                 defense = list_attributes[5],
+                exp_defense = 0,
                 physique = list_attributes[6],
+                exp_physique = 0,
                 precision = list_attributes[7],
+                exp_precision = 0,
                 goalkeep = list_attributes[8],
+                exp_goalkeep = 0,
                 salary = calculate_salary_based_attributes(list_attributes),
                 team_id = team.team_id,
                 region_id = region.region_id

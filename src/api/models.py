@@ -100,15 +100,24 @@ class Player(db.Model):
     player_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), unique=False, nullable=False)
     age = db.Column(db.Integer, nullable=False)
-    mentality = db.Column(db.String(42), nullable=False)
+    mentality = db.Column(db.Integer, nullable=False)
+    exp_mentality = db.Column(db.Integer, nullable=False)
     speed= db.Column(db.Integer, nullable=False)
+    exp_speed= db.Column(db.Integer, nullable=False)
     passes= db.Column(db.Integer, nullable=False)
+    exp_passes= db.Column(db.Integer, nullable=False)
     shoot= db.Column(db.Integer, nullable=False)
+    exp_shoot= db.Column(db.Integer, nullable=False)
     stop_ball= db.Column(db.Integer, nullable=False)
+    exp_stop_ball= db.Column(db.Integer, nullable=False)
     defense= db.Column(db.Integer, nullable=False)
+    exp_defense= db.Column(db.Integer, nullable=False)
     physique= db.Column(db.Integer, nullable=False)
+    exp_physique= db.Column(db.Integer, nullable=False)
     precision= db.Column(db.Integer, nullable=False)
+    exp_precision= db.Column(db.Integer, nullable=False)
     goalkeep= db.Column(db.Integer, nullable=False)
+    exp_goalkeep= db.Column(db.Integer, nullable=False)
     salary=db.Column(db.Integer, nullable=False)
 
     team_id = db.Column(db.Integer, db.ForeignKey('team.team_id'), nullable=False)
@@ -160,6 +169,8 @@ class Region(db.Model):
 
     players = db.relationship('Player', back_populates='region')
     users = db.relationship('User', back_populates='region')
+    teams = db.relationship('Team', back_populates='region')
+    leagues = db.relationship('League', back_populates='region')
 
     def serialize(self):
         return {
@@ -176,10 +187,12 @@ class Team(db.Model):
     trainer_id = db.Column(db.Integer, db.ForeignKey('trainer.trainer_id'), nullable=False)
     stadium_id = db.Column(db.Integer, db.ForeignKey('stadium.stadium_id'), nullable=False)
     league_id = db.Column(db.Integer, db.ForeignKey('league.league_id'), nullable=False)
+    region_id = db.Column(db.Integer, db.ForeignKey('region.region_id'), nullable=False)
     
     trainer = db.relationship('Trainer', back_populates='teams')
     stadium = db.relationship('Stadium', back_populates='teams')
     league = db.relationship('League', back_populates='teams')
+    region = db.relationship('Region', back_populates='teams')
 
     users = db.relationship('User', back_populates='team')
     players = db.relationship('Player', back_populates='team')
@@ -230,9 +243,11 @@ class League(db.Model):
     name=db.Column(db.String(120), nullable=False)
     league_depth=db.Column(db.Integer, nullable=False)
     league_number=db.Column(db.Integer, nullable=False)
+    region_id = db.Column(db.Integer, db.ForeignKey('region.region_id'), nullable=False)
 
     teams = db.relationship('Team', back_populates='league', uselist=True)
     matches = db.relationship('Match', back_populates='league')
+    region = db.relationship('Region', back_populates='leagues')
 
     def serialize(self):
         return {
