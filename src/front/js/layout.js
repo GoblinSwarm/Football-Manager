@@ -4,9 +4,9 @@ import ScrollToTop from "./component/scrollToTop";
 import { BackendURL } from "./component/backendURL";
 
 import { Home } from "./pages/home";
-import { Login } from "./pages/login";
-import { Register } from "./pages/register";
-import { Private } from "./pages/private";
+import { Login } from "./pages/Login.js";
+import { Register } from "./pages/Register.js";
+import { Private } from "./pages/Private.js";
 import injectContext from "./store/appContext";
 
 import { Navbar } from "./component/navbar";
