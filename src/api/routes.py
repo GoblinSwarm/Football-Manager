@@ -456,6 +456,7 @@ def register_user():
         password = set_password(password, salt)
         #Aca se genera un equipo nuevo 
         team=new_team_generator(user_region_id)
+        team.is_bot = False
         user = User(name=name, birthday=birthday, email=email,password=password, salt=salt, region_id=user_region_id, team_id=team.team_id)
         db.session.add(user)
 
@@ -471,7 +472,6 @@ def new_team_generator(user_region_id):
     team_found = False
     while team_found == False:
         region_leagues = League.query.filter_by(region_id=user_region_id)
-        print(region_leagues)
         for league in region_leagues:
             if league is not None:
                 team = Team.query.filter_by(is_bot=True).first()
@@ -589,14 +589,23 @@ def generate_players(team_id, region_id):
         name = random_name(),
         age = random_generator(17,26),
         mentality = mentality,
+        exp_mentality = 0,
         speed = speed,
+        exp_speed = 0,
         passes = passes,
+        exp_passes =0,
         shoot = shoot,
+        exp_shoot = 0,
         stop_ball = stop_ball,
+        exp_stop_ball =0,
         defense = defense,
+        exp_defense = 0,
         physique = physique,
+        exp_physique = 0,
         precision = precision,
+        exp_precision = 0,
         goalkeep = goalkeep,
+        exp_goalkeep = 0,
         salary  = calculate_salary_based_attributes(attributes_list),
         team_id = team_id,
         region_id = region_id
@@ -627,5 +636,3 @@ def user_login():
             return jsonify({"message": "bad credentials"}), 400
     else: 
         return jsonify({"message": "bad credentials"}), 400
-
-    
