@@ -36,7 +36,7 @@ class Position(db.Model):
     position_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), unique=True, nullable=False)
 
-    positionplayers = db.relationship('PositionPlayer', back_populates='position')
+    position_players = db.relationship('PositionPlayer', back_populates='position')
     
     def serialize(self):
         return {
@@ -50,10 +50,12 @@ class PositionPlayer(db.Model):
 
     position_id = db.Column(db.Integer, db.ForeignKey('position.position_id'), nullable=False)
     player_id = db.Column(db.Integer, db.ForeignKey('player.player_id'), nullable=False)
-    
-    position = db.relationship('Position', back_populates='positionplayers', uselist=True)
-    player = db.relationship('Player', back_populates='positionplayers', uselist=True)
+    formation_id = db.Column(db.Integer, db.ForeignKey('formation.formation_id'), nullable=False)
 
+    position = db.relationship('Position', back_populates='position_players', uselist=True)
+    player = db.relationship('Player', back_populates='position_players', uselist=True)
+    formation = db.relationship('Formation', back_populates='position_players', uselist=True)
+    
     def serialize(self):
         return {
             "level": self.level,
@@ -84,13 +86,14 @@ class Match(db.Model):
     home_team = db.relationship('Team', foreign_keys=[home_team_id], back_populates='home_matches')
     away_team = db.relationship('Team', foreign_keys=[away_team_id], back_populates='away_matches')
     league = db.relationship('League', back_populates='matches')
-
+    formations = db.relationship('Formation', back_populates='match')
+    
     def serialize(self):
         return {
             "match_date": self.match_date,
-            "home_team": list(map(lambda item: item.serialize(), self.home_team)),
+            "home_team": self.home_team.serialize() if self.home_team else None,
             "home_goals": self.home_goals,
-            "away_team": list(map(lambda item: item.serialize(), self.away_team)),
+            "away_team": self.away_team.serialize() if self.away_team else None,
             "away_goals": self.away_goals,
             "result": self.result,
             "played": self.played
@@ -125,7 +128,7 @@ class Player(db.Model):
     
     team = db.relationship('Team', back_populates='players', uselist=True)
     region = db.relationship('Region', back_populates='players', uselist=True)
-    positionplayers = db.relationship('PositionPlayer', back_populates='player')
+    position_players = db.relationship('PositionPlayer', back_populates='player')
 
     def serialize(self):
         return {
@@ -189,16 +192,18 @@ class Team(db.Model):
     league_id = db.Column(db.Integer, db.ForeignKey('league.league_id'), nullable=False)
     region_id = db.Column(db.Integer, db.ForeignKey('region.region_id'), nullable=False)
     
-    trainer = db.relationship('Trainer', back_populates='teams')
-    stadium = db.relationship('Stadium', back_populates='teams')
-    league = db.relationship('League', back_populates='teams')
-    region = db.relationship('Region', back_populates='teams')
+    trainer = db.relationship('Trainer', back_populates='teams', uselist=True)
+    stadium = db.relationship('Stadium', back_populates='teams', uselist=True)
+    league = db.relationship('League', back_populates='teams', uselist=True)
+    region = db.relationship('Region', back_populates='teams', uselist=True)
 
     users = db.relationship('User', back_populates='team')
     players = db.relationship('Player', back_populates='team')
 
     home_matches = db.relationship('Match', foreign_keys=[Match.home_team_id], back_populates='home_team')
     away_matches = db.relationship('Match', foreign_keys=[Match.away_team_id], back_populates='away_team')
+
+    formations = db.relationship('Formation', back_populates='team')
 
     def serialize_datafull(self):
         return{
@@ -244,6 +249,7 @@ class League(db.Model):
     league_depth=db.Column(db.Integer, nullable=False)
     league_number=db.Column(db.Integer, nullable=False)
     region_id = db.Column(db.Integer, db.ForeignKey('region.region_id'), nullable=False)
+    season = db.Column(db.Integer, nullable=False)
 
     teams = db.relationship('Team', back_populates='league', uselist=True)
     matches = db.relationship('Match', back_populates='league')
@@ -254,7 +260,8 @@ class League(db.Model):
             "league_id": self.league_id,
             "name": self.name,
             "league_depth": self.league_depth,
-            "league_number": self.league_number
+            "league_number": self.league_number,
+            "season" : self.season
         }
     
 class TrainerType(db.Model):
@@ -279,7 +286,8 @@ class TrainerType(db.Model):
 class Trainer(db.Model):
     trainer_id = db.Column(db.Integer, primary_key=True)
     name= db.Column(db.String(120), nullable=False)
-    
+    isEmployed = db.Column(db.Boolean, nullable=False)
+
     trainertype_id = db.Column(db.Integer, db.ForeignKey('trainertype.trainertype_id'), nullable=False)
     trainertype = db.relationship('TrainerType', back_populates='trainers')
 
@@ -291,3 +299,13 @@ class Trainer(db.Model):
             "name": self.name,
             "trainertype": list(map(lambda item: item.serialize(), self.trainertype))
         }
+    
+class Formation(db.Model):
+    formation_id = db.Column(db.Integer, primary_key=True)
+    match_id = db.Column(db.Integer, db.ForeignKey('match.match_id'), nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey('team.team_id'), nullable=False)
+
+    match = db.relationship('Match', back_populates='formations')
+    team = db.relationship('Team', back_populates='formations')
+    position_players = db.relationship('PositionPlayer', back_populates='formation')
+

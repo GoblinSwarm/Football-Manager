@@ -127,7 +127,6 @@ def populate():
     results=[]
     results.append(populate_trainer_type())
     results.append(populate_trainer())
-    results.append(populate_stadium())
     results.append(populate_region())
     results.append(populate_position())
     results.append(populate_league())
@@ -165,8 +164,8 @@ def populate_trainer():
             trainer = Trainer(
                 name=row[0].strip(),  
                 trainertype_id=row[1].strip(),  
+                isEmployed=False
             )
-            print(f"Adding Trainers: {trainer}") 
             db.session.add(trainer)
     try:
         db.session.commit()
@@ -176,24 +175,22 @@ def populate_trainer():
         db.session.rollback()
         return jsonify({"message": "Couldnt create Trainers"}), 400
 
-def populate_stadium():
-    csv_to_read = 'stadium'
-    file_read=read_csv(csv_to_read)
+def populate_stadium(team_name):
+
     #name, standard_seats, bleacher_seats, premium_seats, club_seats, box_seats
-    for row in file_read[1:]:
-            stadium = Stadium(
-                name=row[0].strip(),  
-                standard_seats=row[1].strip(),  
-                bleacher_seats=row[2].strip(),
-                premium_seats=row[3].strip(),
-                club_seats=row[4].strip(),
-                box_seats=row[5].strip()
-            )
-            print(f"Adding Trainers: {stadium}") 
-            db.session.add(stadium)
+    # 5000, 3500 , 2000, 500, 50
+    stadium = Stadium(
+        name=team_name + ' ' + 'Stadium',  
+        standard_seats=5000,  
+        bleacher_seats=3500,
+        premium_seats=2000,
+        club_seats=500,
+        box_seats=50
+    )
+    db.session.add(stadium)
     try:
         db.session.commit()
-        return "Stadium added"
+        return stadium.stadium_id
     except Exception as e:
         print(e.args)
         db.session.rollback()
@@ -207,7 +204,6 @@ def populate_region():
             region = Region(
                 name=row[0].strip(),  
             )
-            print(f"Adding Region: {region}") 
             db.session.add(region)
     try:
         db.session.commit()
@@ -225,7 +221,6 @@ def populate_position():
             position = Position(
                 name=row[0].strip(),  
             )
-            print(f"Adding Region: {position}") 
             db.session.add(position)
     try:
         db.session.commit()
@@ -245,9 +240,9 @@ def populate_league():
                     name=row[0].strip(),  
                     league_depth=row[1].strip(),
                     league_number=row[2].strip(),
-                    region_id=i
+                    region_id=i,
+                    season = 1
                 )
-                print(f"Adding Region: {league}") 
                 db.session.add(league)
     try:
         db.session.commit()
@@ -257,24 +252,50 @@ def populate_league():
         db.session.rollback()
         return jsonify({"message": "Couldnt create League"}), 400   
 
+def employ_trainer():
+
+    trainer = Trainer.query.filter_by(isEmployed=False).first()
+
+    if trainer is not None:
+        trainer.isEmployed = True
+    else:
+        trainer_id = generate_random_trainer()
+        trainer = Trainer.query.get(trainer_id)
+
+        if trainer is None:
+            print('Trainer is non existant')
+        trainer.isEmployed = True
+
+    try:
+        db.session.commit()
+        return trainer.trainer_id
+    except Exception as e:
+        print(e.args)
+        db.session.rollback()
+        return    
+
 def populate_team():
     # En este metodo debe de venir el region_id para llamar
     csv_to_read = 'team'
     file_read=read_csv(csv_to_read)
     #name, finances, trainer_id, stadium_id, league_id
-    for row in file_read[1:]:
-            for i in range(1,5):
-                team = Team(
-                    name=row[0].strip(),  
-                    finances=row[1].strip(),
-                    trainer_id=row[2].strip(),
-                    stadium_id=row[3].strip(),
-                    league_id=row[4].strip(),
-                    is_bot = True,
-                    region_id=i
-                )
-                print(f"Adding Region: {team}") 
-                db.session.add(team)
+
+    for i in range(1,5):
+        for row in file_read[1:]:
+            trainer_to_team = employ_trainer()
+            stadium = generate_stadium(row[0].strip())
+            team = Team(
+                name=row[0].strip(),  
+                finances=row[1].strip(),
+                trainer_id= trainer_to_team,
+                stadium_id=stadium,
+                league_id=i,
+                is_bot = True,
+                region_id=i
+            )
+            
+            db.session.add(team)
+    
     try:
         db.session.commit()
         return "Team added"
@@ -488,12 +509,13 @@ def generate_bot_leagues(region_id):
     #name, league_depth, league_number
     league_depth = last_league.league_depth + 1 # Profundidad de liga nueva
     league_iterations = (last_league.league_number * 4) # Da la cantidad de nuevas ligas a crearse
-
+    this_season = last_league.season
     for i in range(1, league_iterations):
         new_league = League(
             name =  random_name(),
             league_depth = league_depth,
-            league_number = i
+            league_number = i,
+            season=this_season
         )
         db.session.add(new_league)
 
@@ -555,7 +577,8 @@ def generate_random_trainer():
     #name, trainertype_id
     trainer = Trainer (
         name = random_name(),
-        trainertype_id = generate_random_trainer_type()
+        trainertype_id = generate_random_trainer_type(),
+        isEmployed = False
     )
     db.session.add(trainer)
     try:
